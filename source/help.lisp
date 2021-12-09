@@ -111,46 +111,42 @@
             'nyxt/help-mode:help-mode)
   "Inspect a function and show it in a help buffer.
 For generic functions, describe all the methods."
-  (if function-suggestion
-      (let ((input function-suggestion))
-        (flet ((method-desc (method buffer)
-                 (spinneret:with-html-string
-                   (:style (style buffer))
-                   (:h1 (symbol-name input) " " (write-to-string (mopu:method-specializers method)))
-                   (:pre (documentation method 't))
-                   (:h2 "Argument list")
-                   (:p (write-to-string (closer-mop:method-lambda-list method)))
-                   (alex:when-let* ((definition (swank:find-definition-for-thing method))
-                                    (not-error-p (null (getf definition :error)))
-                                    (file (rest (getf definition :location)))
-                                    (location (alex:assoc-value (rest definition) :snippet)))
-                     (:h2 (format nil "Source ~a" file))
-                     (:pre (first location))))))
-          (if (typep (symbol-function input) 'generic-function)
-              (apply #'str:concat (mapcar (alex:rcurry #'method-desc buffer)
-                                          (mopu:generic-function-methods
-                                           (symbol-function input))))
-            (str:concat
-             (spinneret:with-html-string
-              (:style (style buffer))
-              (:h1 (format nil "~s" input) ; Use FORMAT to keep package prefix.
-                   (when (macro-function input) " (macro)"))
-              (:pre (documentation input 'function))
-              (:h2 "Argument list")
-              (:p (write-to-string (mopu:function-arglist input)))
-              #+sbcl
-              (unless (macro-function input)
-                (:h2 "Type")
-                (:p (format nil "~s" (sb-introspect:function-type input))))
-              (alex:when-let* ((definition (swank:find-definition-for-thing (symbol-function input)))
-                               (not-error-p (null (getf definition :error)))
-                               (file (rest (getf definition :location)))
-                               (location (alex:assoc-value (rest definition) :snippet)))
-                              (:h2 (format nil "Source ~a" file))
-                              (:pre (first location))))))))
-      (prompt
-       :prompt "Describe function"
-       :sources (make-instance 'function-source))))
+  (let ((input function))
+    (flet ((method-desc (method buffer)
+                        (spinneret:with-html-string
+                         (:style (style buffer))
+                         (:h1 (symbol-name input) " " (write-to-string (mopu:method-specializers method)))
+                         (:pre (documentation method 't))
+                         (:h2 "Argument list")
+                         (:p (write-to-string (closer-mop:method-lambda-list method)))
+                         (alex:when-let* ((definition (swank:find-definition-for-thing method))
+                                          (not-error-p (null (getf definition :error)))
+                                          (file (rest (getf definition :location)))
+                                          (location (alex:assoc-value (rest definition) :snippet)))
+                                         (:h2 (format nil "Source ~a" file))
+                                         (:pre (first location))))))
+      (if (typep (symbol-function input) 'generic-function)
+          (apply #'str:concat (mapcar (alex:rcurry #'method-desc buffer)
+                                      (mopu:generic-function-methods
+                                       (symbol-function input))))
+        (str:concat
+         (spinneret:with-html-string
+          (:style (style buffer))
+          (:h1 (format nil "~s" input) ; Use FORMAT to keep package prefix.
+               (when (macro-function input) " (macro)"))
+          (:pre (documentation input 'function))
+          (:h2 "Argument list")
+          (:p (write-to-string (mopu:function-arglist input)))
+          #+sbcl
+          (unless (macro-function input)
+            (:h2 "Type")
+            (:p (format nil "~s" (sb-introspect:function-type input))))
+          (alex:when-let* ((definition (swank:find-definition-for-thing (symbol-function input)))
+                           (not-error-p (null (getf definition :error)))
+                           (file (rest (getf definition :location)))
+                           (location (alex:assoc-value (rest definition) :snippet)))
+                          (:h2 (format nil "Source ~a" file))
+                          (:pre (first location)))))))))
 
 (define-internal-page-command describe-command
     (&key (command (first (prompt
