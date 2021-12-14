@@ -457,7 +457,7 @@ Must be one of `:always' (accept all cookies), `:never' (reject all cookies),
 
 (define-user-class internal-buffer)
 
-(define-class panel-buffer (internal-buffer)
+(define-class panel-buffer (user-web-buffer)
   ((width 250 :documentation "The width in pixels.")
    (style (theme:themed-css (theme *browser*)
             (body
