@@ -226,7 +226,7 @@ package set to current package."
   "Return non-nil if a PATH is a socket."
   (and (uiop:file-exists-p path)
        #+darwin
-       (equal "=" (uiop:run-program (list "stat" "-f" "%T" path)
+       (equal "=" (uiop:run-program (list "stat" "-f" "%T" (uiop:native-namestring path))
                                     :output '(:string :stripped t)))
        #+(and (not darwin) (not sbcl))
        (eq :socket (osicat:file-kind path))
